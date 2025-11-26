@@ -311,4 +311,119 @@ async def get_nasa_apod():
 @app.get("/api/artifact/mars_photos", summary="Mars Rover Photos", tags=["Alien Archives"])
 async def get_mars_photos(sol: int = 1000, rover: str = "curiosity"):
     """Returns photos from Mars rovers."""
-    url = f"{NASA_BASE}/mars-photos/api/v1/rovers/{rover}/photos?sol={sol}&api_
+    url = f"{NASA_BASE}/mars-photos/api/v1/rovers/{rover}/photos?sol={sol}&api_key={NASA_API_KEY}"
+    async with httpx.AsyncClient() as client:
+        result = await fetch_api_data(url, client)
+    if "error" in result:
+        raise HTTPException(status_code=500, detail=result["error"])
+    return result
+
+
+@app.get("/api/artifact/neo", summary="Near Earth Objects", tags=["Alien Archives"])
+async def get_neo(start_date: str = None, end_date: str = None):
+    """Returns Near Earth Objects for a date range."""
+    if not start_date:
+        start_date = datetime.now().strftime("%Y-%m-%d")
+    if not end_date:
+        end_date = start_date
+    url = f"{NASA_BASE}/neo/rest/v1/feed?start_date={start_date}&end_date={end_date}&api_key={NASA_API_KEY}"
+    async with httpx.AsyncClient() as client:
+        result = await fetch_api_data(url, client)
+    if "error" in result:
+        raise HTTPException(status_code=500, detail=result["error"])
+    return result
+
+
+# ==================== CELESTIAL CARTOGRAPHER TRACK ====================
+@app.get("/api/cartographer/spacex_launches", summary="SpaceX Launches", tags=["Celestial Cartographer"])
+async def get_spacex_launches(limit: int = 10):
+    """Returns SpaceX launches."""
+    url = f"{SPACEX_BASE}/v5/launches"
+    async with httpx.AsyncClient() as client:
+        result = await fetch_api_data(url, client)
+    if "error" in result:
+        raise HTTPException(status_code=500, detail=result["error"])
+    if isinstance(result, list):
+        return result[:limit]
+    return result
+
+
+@app.get("/api/cartographer/spacex_latest", summary="Latest SpaceX Launch", tags=["Celestial Cartographer"])
+async def get_spacex_latest():
+    """Returns the latest SpaceX launch."""
+    url = f"{SPACEX_BASE}/v5/launches/latest"
+    async with httpx.AsyncClient() as client:
+        result = await fetch_api_data(url, client)
+    if "error" in result:
+        raise HTTPException(status_code=500, detail=result["error"])
+    return result
+
+
+@app.get("/api/cartographer/iss_location", summary="ISS Current Location", tags=["Celestial Cartographer"])
+async def get_iss_location():
+    """Returns the current ISS location."""
+    if ISS_CACHE.get('iss_location'):
+        return ISS_CACHE['iss_location']
+    url = f"{ISS_BASE}/iss-now.json"
+    async with httpx.AsyncClient() as client:
+        result = await fetch_api_data(url, client)
+    return result
+
+
+@app.get("/api/cartographer/people_in_space", summary="People in Space", tags=["Celestial Cartographer"])
+async def get_people_in_space():
+    """Returns list of people currently in space."""
+    if ISS_CACHE.get('people_in_space'):
+        return ISS_CACHE['people_in_space']
+    url = f"{ISS_BASE}/astros.json"
+    async with httpx.AsyncClient() as client:
+        result = await fetch_api_data(url, client)
+    return result
+
+
+# ==================== ASTROGATORS AI TRACK ====================
+@app.get("/api/advisor/solar_storm", summary="Solar Storm Alert", tags=["Astrogators AI"])
+async def get_solar_storm_alert():
+    """Checks the last 72 hours for CME events."""
+    end_date = datetime.now().date().isoformat()
+    start_date = (datetime.now() - timedelta(days=3)).date().isoformat()
+    url = f"{NASA_BASE}/DONKI/CMEAnalysis?startDate={start_date}&endDate={end_date}&api_key={NASA_API_KEY}"
+    async with httpx.AsyncClient() as client:
+        result = await fetch_api_data(url, client)
+    if "error" in result:
+        return {"status": "ERROR", "active_cme_alert": False, "reason": result["error"]}
+    active_alert = isinstance(result, list) and len(result) > 0
+    return {"status": "OK", "active_cme_alert": active_alert, "event_count": len(result) if isinstance(result, list) else 0}
+
+
+@app.get("/api/advisor/starlink", summary="Starlink Satellites", tags=["Astrogators AI"])
+async def get_starlink_status():
+    """Returns Starlink satellite catalog."""
+    url = STARLINK_BASE
+    async with httpx.AsyncClient() as client:
+        result = await fetch_api_data(url, client)
+    if "error" in result:
+        raise HTTPException(status_code=500, detail=result["error"])
+    if isinstance(result, list):
+        return {"status": "OK", "count": len(result), "satellites": result[:50]}
+    return result
+
+
+@app.get("/api/test/{api_name}", summary="Test Any API", tags=["Testing"])
+async def test_api(api_name: str):
+    """Test endpoint for any configured API."""
+    api_map = {
+        "NASA_APOD": f"{NASA_BASE}/planetary/apod?api_key={NASA_API_KEY}",
+        "NASA_MARS": f"{NASA_BASE}/mars-photos/api/v1/rovers/curiosity/photos?sol=1000&api_key={NASA_API_KEY}",
+        "NASA_NEO": f"{NASA_BASE}/neo/rest/v1/neo/browse?api_key={NASA_API_KEY}",
+        "SPACEX_LAUNCHES": f"{SPACEX_BASE}/v5/launches/latest",
+        "ISS_LOCATION": f"{ISS_BASE}/iss-now.json",
+        "LAUNCH_LIBRARY": "https://ll.thespacedevs.com/2.2.0/launch/upcoming/?limit=1",
+    }
+    url = api_map.get(api_name)
+    if not url:
+        return {"error": f"Unknown API: {api_name}", "available": list(api_map.keys())}
+    async with httpx.AsyncClient() as client:
+        result = await fetch_api_data(url, client)
+    return result
+
