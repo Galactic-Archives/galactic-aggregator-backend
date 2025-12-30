@@ -615,3 +615,6 @@ async def health():
         "cache_initialized": bool(IN_MEMORY_CACHE),
         "iss_cache_keys": list(ISS_CACHE.keys()),
         "last_updated": IN_MEMORY_CACHE.get("last_updated"),
+    }
+
+
