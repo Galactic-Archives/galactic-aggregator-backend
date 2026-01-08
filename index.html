@@ -1,1 +1,59 @@
 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Galactic Archives API Dashboard</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #0a0e27;
+            color: #fff;
+        }
+        h1 { color: #4a9eff; }
+        .card {
+            background: #1a1f3a;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+        .metric { font-size: 1.2em; margin: 10px 0; }
+        .label { color: #8b92a8; }
+        .value { color: #4a9eff; font-weight: bold; }
+        a { color: #4a9eff; }
+    </style>
+</head>
+<body>
+    <h1>🚀 Galactic Archives Hackathon API</h1>
+    <div class="card">
+        <h2>Dashboard Data</h2>
+        <div id="dashboard">Loading...</div>
+    </div>
+    <div class="card">
+        <h2>API Documentation</h2>
+        <p>Access the interactive API documentation at <a href="/docs">/docs</a></p>
+    </div>
+    <script>
+        fetch('/api/dashboard')
+            .then(r => r.json())
+            .then(data => {
+                document.getElementById('dashboard').innerHTML = `
+                    <div class="metric"><span class="label">APOD:</span> <span class="value">${data.apod_title}</span></div>
+                    <div class="metric"><span class="label">Latest SpaceX Flight:</span> <span class="value">#${data.spacex_flight_number}</span></div>
+                    <div class="metric"><span class="label">ISS Location:</span> <span class="value">${data.iss_location}</span></div>
+                    <div class="metric"><span class="label">People in Space:</span> <span class="value">${data.people_in_space_count}</span></div>
+                    <div class="metric"><span class="label">Near-Earth Objects:</span> <span class="value">${data.neo_count}</span></div>
+                    <div class="metric"><span class="label">Last Updated:</span> <span class="value">${new Date(data.last_updated).toLocaleString()}</span></div>
+                `;
+            })
+            .catch(err => {
+                document.getElementById('dashboard').innerHTML = '<p style="color: #ff6b6b;">Error loading dashboard data</p>';
+            });
+    </script>
+</body>
+</html>
