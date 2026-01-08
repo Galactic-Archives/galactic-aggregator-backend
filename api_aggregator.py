@@ -5,6 +5,7 @@
 import asyncio
 import json
 import os
+from pathlib import Path
 from contextlib import asynccontextmanager
 from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional
@@ -331,9 +332,10 @@ app.add_middleware(
 # -----------------------------------------------------------------------------
 # 5. Frontend serving (optional)
 # -----------------------------------------------------------------------------
+BASE_DIR = Path(__file__).resolve().parent
+
 try:
-    with open("index.html", "r", encoding="utf-8") as f:
-        INDEX_HTML_CONTENT = f.read()
+    with open(BASE_DIR / "index.html", "r", encoding="utf-8") as f:        INDEX_HTML_CONTENT = f.read()
 except FileNotFoundError:
     INDEX_HTML_CONTENT = (
         "<h1>Error: index.html not found! Ensure it is in the same directory as api_aggregator.py.</h1>"
@@ -616,5 +618,6 @@ async def health():
         "iss_cache_keys": list(ISS_CACHE.keys()),
         "last_updated": IN_MEMORY_CACHE.get("last_updated"),
     }
+
 
 
