@@ -336,11 +336,11 @@ BASE_DIR = Path(__file__).resolve().parent
 
 try:
     with open(BASE_DIR / "index.html", "r", encoding="utf-8") as f:
-                
-    INDEX_HTML_CONTENT = (
-        "<h1>Error: index.html not found! Ensure it is in the same directory as api_aggregator.py.</h1>"
+        INDEX_HTML_CONTENT = f.read()
+        except FileNotFoundError:
+            INDEX_HTML_CONTENT = (
+                        "<h1>Error: index.html not found! Ensure it is in the same directory as api_aggregator.py.</h1>"
     )
-
 
 @app.get("/", response_class=HTMLResponse, include_in_schema=False)
 async def get_dashboard_html():
@@ -618,6 +618,7 @@ async def health():
         "iss_cache_keys": list(ISS_CACHE.keys()),
         "last_updated": IN_MEMORY_CACHE.get("last_updated"),
     }
+
 
 
 
